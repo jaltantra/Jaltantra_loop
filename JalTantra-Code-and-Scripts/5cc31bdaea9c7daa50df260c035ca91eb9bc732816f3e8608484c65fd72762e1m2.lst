@@ -1,0 +1,190 @@
+GAMS 43.2.0  859d62d5 May 4, 2023           LEX-LEG x86 64bit/Linux - 06/15/23 22:05:34 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  Sets
+   2          nodes /1,       2,      3,      4,      5,      6,      7 /
+   3          pipes /0,       1,      2,      3,      4,      5,      6,      7,      8,      9,      10,     11,     12,     13 /
+   4          src(nodes) /1/;
+   5  alias (src,srcs);
+   6  alias (nodes,j) ;
+   7  Set arcs(nodes,j) //;
+   8  Set F_arcs(nodes,j) /1.2,  2.4,  2.3,  3.5,  4.5,  4.6,  7.5,  6.7/;
+   9   
+  10  Parameters
+  11          Len(nodes,j) //
+  12          F_L(nodes,j) /1 .2      1000.0,  2      .4      1000.0,  2      .3      1000.0,  3      .5      1000.0,  4      .5      1000.0,  4      .6      1000.0,  7      .5      1000.0,  6      .7      1000.0/
+  13          E(nodes) /1  210.0, 2  150.0, 3  160.0, 4  155.0, 5  150.0, 6  165.0, 7  160.0/
+  14          P(nodes) /1  0.0, 2  30.0, 3  30.0, 4  30.0, 5  30.0, 6  30.0, 7  30.0/
+  15          D(nodes) /1  -311.1087, 2  27.7777, 3  27.777, 4  33.333, 5  75.0, 6  91.666, 7  55.555/
+  16          dia(pipes) /0  25.4, 1  50.8, 2  76.2, 3  101.6, 4  152.4, 5  203.2, 6  254.0, 7  304.8, 8  355.6, 9  406.4, 10  457.2, 11  508.0, 12  558.8, 13  609.6/
+  17          C(pipes) /0  2.0, 1  5.0, 2  8.0, 3  11.0, 4  16.0, 5  23.0, 6  32.0, 7  50.0, 8  60.0, 9  90.0, 10  130.0, 11  170.0, 12  300.0, 13  550.0/
+  18          R(pipes) /0  130.0, 1  130.0, 2  130.0, 3  130.0, 4  130.0, 5  130.0, 6  130.0, 7  130.0, 8  130.0, 9  130.0, 10  130.0, 11  130.0, 12  130.0, 13  130.0/
+  19          F_d(nodes,j) /1 .2      600.0,  2       .4      600.0,  2       .3      600.0,  3       .5      600.0,  4       .5      600.0,  4       .6      600.0,  7       .5      600.0,  6       .7      600.0/
+  20          F_R(nodes,j) /1 .2      130.0,  2       .4      130.0,  2       .3      130.0,  3       .5      130.0,  4       .5      130.0,  4       .6      130.0,  7       .5      130.0,  6       .7      130.0/;
+  21   
+  22  Scalar omega  /10.68/;
+  23  Scalar bnd ;
+  24  Scalar qm;
+  25  Scalar q_M;
+  26   
+  27  bnd = sum(src,D(src));
+  28  q_M=-bnd;
+  29  qm=0;
+  30   
+  31  Variable l(nodes,j,pipes);
+  32  l.lo(nodes,j,pipes)= 0;
+  33   
+  34  Variable q1(nodes,j);
+  35  q1.lo(nodes,j)=qm;
+  36  q1.up(nodes,j)=q_M;
+  37   
+  38  Variable q2(nodes,j);
+  39  q2.lo(nodes,j)=qm;
+  40  q2.up(nodes,j)=q_M;
+  41   
+  42  Variables z;
+  43   
+  44  Variable h(nodes);
+  45   
+  46  Equations cost "objective function",bound1(nodes,j,pipes),cons1(nodes),cons2(nodes),cons3(nodes,j),cons5(src), cons4(nodes,j), cons6(nodes,j) ;
+  47  cost..  z=e=sum(arcs(nodes,j),sum(pipes,l(arcs,pipes)*c(pipes)));
+  48  bound1(nodes,j,pipes)$arcs(nodes,j).. l(nodes,j,pipes) =l= Len(nodes,j);
+  49  cons1(nodes).. sum(arcs(j,nodes),(q1(arcs)-q2(arcs))) =e= sum(arcs(nodes,j),(q1(arcs)-q2(arcs))) + D(nodes);
+  50  cons2(nodes).. h(nodes) =g= E(nodes) + P(nodes);
+  51  cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,(((q1(arcs)*0.001)**1.852 - (q2(arcs)*0.001)**1.852)*omega*l(arcs,pipes))/((R(pipes)**1.852)*(dia(pipes)/1000)**4.87));
+  52  cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
+  53  cons5(src)..  h(src)=e= sum(srcs,E(srcs));
+  54  cons6(arcs(nodes,j)).. q1(arcs)*q2(arcs) =l= q_M*qm;
+  55   
+  56  model m2  /all/  ;
+  57  solve m2 using minlp minimizing z ;
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  43.2.0 859d62d5 LEX-LEG
+GAMS 43.2.0  859d62d5 May 4, 2023           LEX-LEG x86 64bit/Linux - 06/15/23 22:05:34 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE m2 Using MINLP From line 57
+
+
+---- cost  =E=  objective function
+
+cost..  z =E= 0 ; (LHS = 0)
+     
+
+---- bound1  =L=  
+
+                NONE
+
+**** Exec Error at line 49: Equation infeasible due to rhs value
+
+**** INFEASIBLE EQUATIONS ...
+
+---- cons1  =E=  
+
+cons1(1)..  0 =E= -311.1087 ; (LHS = 0, INFES = 311.1087 ****)
+     
+cons1(2)..  0 =E= 27.7777 ; (LHS = 0, INFES = 27.7777 ****)
+     
+cons1(3)..  0 =E= 27.777 ; (LHS = 0, INFES = 27.777 ****)
+     
+cons1(4)..  0 =E= 33.333 ; (LHS = 0, INFES = 33.333 ****)
+     
+cons1(5)..  0 =E= 75 ; (LHS = 0, INFES = 75 ****)
+     
+cons1(6)..  0 =E= 91.666 ; (LHS = 0, INFES = 91.666 ****)
+     
+cons1(7)..  0 =E= 55.555 ; (LHS = 0, INFES = 55.555 ****)
+     
+
+---- cons2  =G=  
+
+cons2(1)..  h(1) =G= 210 ; (LHS = 0, INFES = 210 ****)
+     
+cons2(2)..  h(2) =G= 180 ; (LHS = 0, INFES = 180 ****)
+     
+cons2(3)..  h(3) =G= 190 ; (LHS = 0, INFES = 190 ****)
+     
+REMAINING 4 ENTRIES SKIPPED
+
+
+---- cons3  =E=  
+
+                NONE
+
+
+---- cons5  =E=  
+
+cons5(1)..  h(1) =E= 210 ; (LHS = 0, INFES = 210 ****)
+     
+
+---- cons4  =E=  
+
+                NONE
+
+
+---- cons6  =L=  
+
+                NONE
+
+GAMS 43.2.0  859d62d5 May 4, 2023           LEX-LEG x86 64bit/Linux - 06/15/23 22:05:34 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE m2 Using MINLP From line 57
+
+
+---- z  
+
+z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cost
+
+
+---- h  
+
+h(1)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(1)
+        1       cons5(1)
+
+h(2)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(2)
+
+h(3)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(3)
+
+REMAINING 4 ENTRIES SKIPPED
+GAMS 43.2.0  859d62d5 May 4, 2023           LEX-LEG x86 64bit/Linux - 06/15/23 22:05:34 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE m2 Using MINLP From line 57
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           16
+BLOCKS OF VARIABLES           5     SINGLE VARIABLES            8
+NON ZERO ELEMENTS             9     NON LINEAR N-Z              0
+CODE LENGTH                   0     CONSTANT POOL              16
+
+
+GENERATION TIME      =        0.000 SECONDS      4 MB  43.2.0 859d62d5 LEX-LEG
+
+**** SOLVE from line 57 ABORTED, EXECERROR = 1
+
+
+EXECUTION TIME       =        0.001 SECONDS      4 MB  43.2.0 859d62d5 LEX-LEG
+
+
+USER: GAMS Community License for Shantanu Mapari     G230516|0002AO-GEN
+      Indian Institute of Technology (IIT) Bombay, Computer ScienCL6005
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /home/shantanu/Downloads/MTP/JalTantra-Code-and-Scripts/DataNetworkGraphInput_hashed/5cc31bdaea9c7daa50df260c035ca91eb9bc732816f3e8608484c65fd72762e1m2.gms
+Output     /home/shantanu/Downloads/MTP/JalTantra-Code-and-Scripts/5cc31bdaea9c7daa50df260c035ca91eb9bc732816f3e8608484c65fd72762e1m2.lst
+
+**** USER ERROR(S) ENCOUNTERED
