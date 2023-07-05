@@ -291,8 +291,9 @@
                     //button to send information to server and optimize the network
                     { id: 'optimization', text: 'Optimize Network', expanded: false, group: true
                         , nodes : [
+                            { id: 'optimize_1min', text: 'Optimize(1 minutes)', icon: 'fa fa-wrench'},
                             { id: 'optimize', text: 'Optimize(5 minutes)', icon: 'fa fa-wrench'},
-                            { id: 'optimize_again', text: 'Optimize(1 hour)', icon: 'fa fa-wrench' },  //button to run the optimization again for 1 hour
+                            { id: 'optimize_1hour', text: 'Optimize(1 hour)', icon: 'fa fa-wrench' },  //button to run the optimization again for 1 hour
                             { id: 'results', text: 'Results', icon: 'fa fa-bar-chart' }]},
 
 
@@ -551,7 +552,141 @@
                                 });
                             break;
 
-                        case 'optimize_again':
+                        case optimize_1min:
+                            w2ui.resultnodegrid.clear();
+                            w2ui.resultpipegrid.clear();
+                            w2ui.resultcostgrid.clear();
+                            w2ui.resultesrcostgrid.clear();
+                            w2ui.resultpumpgrid.clear();
+
+                            // document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
+                            //validate input data
+                            if(!validateData())
+                                return;
+                            //convert all network data into JSON strings
+                            var generalString = JSON.stringify(w2ui.generalform.record,replacer);
+                            var nodesString = JSON.stringify(w2ui.nodegrid.records,replacer);
+                            var pipesString = JSON.stringify(w2ui.pipegrid.records,replacer);
+                            var commercialPipesString = JSON.stringify(w2ui.commercialpipegrid.records,replacer);
+
+                            var esrProperties = w2ui.esrmainform.record;
+                            esrProperties.esr_enabled = (w2ui.esrtopform.record['enable_esr'] == true);
+                            var esrGeneralString = JSON.stringify(esrProperties,esrnodereplacer);
+                            var esrCostString = JSON.stringify(w2ui.esrmaingrid.records,replacer);
+
+                            var pumpProperties = w2ui.pumpmainform.record;
+                            pumpProperties.pump_enabled = (w2ui.pumptopform.record['enable_pump'] == true);
+                            pumpProperties.energycost_factor = 1;
+                            var pumpGeneralString = JSON.stringify(pumpProperties,pumpnodereplacer);
+                            var pumpManualString = JSON.stringify(w2ui.pumpmaingrid.records,replacer);
+
+                            var valveString = JSON.stringify(w2ui.valvegrid.records,replacer);
+
+                            var RunTime='1min';
+                            //send server request with JSON objects
+                            w2ui.generalform.save({'general': generalString,
+                                    'nodes': nodesString,
+                                    'pipes': pipesString,
+                                    'commercialPipes': commercialPipesString,
+                                    'esrGeneral': esrGeneralString,
+                                    'esrCost': esrCostString,
+                                    'pumpGeneral': pumpGeneralString,
+                                    'pumpManual': pumpManualString,
+                                    'valves': valveString,
+                                    'version': version,
+                                    'place': place,
+                                    'time':RunTime},
+                                function(data)
+                                {
+                                    //populate result tables with server response
+                                    document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
+                                    if (data.hasOwnProperty('message')) {
+                                        if (!data['message'].startsWith('The solver is working, refresh the page')) {
+                                            document.querySelectorAll('.modal-dialog').forEach(element => element.classList.add('hidden'));
+                                            w2alert(data['message']);
+                                            return;
+                                        }
+                                        // document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
+                                        myDisplayTimer1min();
+                                        return;
+                                    }
+                                    document.querySelectorAll('.modal-dialog').forEach(element => element.classList.add('hidden'));
+                                    w2alert(data['data']);
+                                    var resultnodes = data['resultnodes'];
+                                    $.each(resultnodes, function(index,value)
+                                    {
+                                        value['recid']=index+1;
+                                    });
+                                    w2ui.resultnodegrid.add(resultnodes);
+
+                                    var resultpipes = data['resultpipes'];
+                                    $.each(resultpipes, function(index,value){
+                                        value['recid']=index+1;
+                                        if(value['pressureexceeded']){
+                                            value['style'] = 'background-color: red';
+                                        }
+                                        if(value['pumphead']==0){
+                                            value['pumphead'] = null;
+                                        }
+                                        if(value['pumppower']==0){
+                                            value['pumppower'] = null;
+                                        }
+                                        if(value['valvesetting']==0){
+                                            value['valvesetting'] = null;
+                                        }
+                                    });
+                                    w2ui.resultpipegrid.add(resultpipes);
+
+                                    var resultcost = data['resultcost'];
+                                    $.each(resultcost, function(index,value)
+                                    {
+                                        value['recid']=index+1;
+                                    });
+                                    w2ui.resultcostgrid.add(resultcost);
+
+                                    var resultesrcost = data['resultesrcost'];
+                                    $.each(resultesrcost, function(index,value)
+                                    {
+                                        value['recid']=index+1;
+                                    });
+                                    w2ui.resultesrcostgrid.add(resultesrcost);
+
+                                    var resultpumpcost = data['resultpumpcost'];
+                                    var totalpower = 0;
+                                    var totalenergy = 0;
+                                    var totalcapital = 0;
+                                    var totalcost = 0;
+                                    $.each(resultpumpcost, function(index,value)
+                                    {
+                                        value['recid']=index+1;
+                                        totalpower += value.pumppower;
+                                        totalenergy += value.energycost;
+                                        totalcapital += value.capitalcost;
+                                        totalcost += value.totalcost;
+                                    });
+                                    w2ui.resultpumpgrid.add(resultpumpcost);
+                                    w2ui.resultpumpgrid.add({
+                                        w2ui: { summary: true },
+                                        style: 'background-color : palegreen',
+                                        recid: 'S-1',
+                                        pipeid: 'Total',
+                                        pumppower: totalpower,
+                                        energycost: totalenergy,
+                                        capitalcost: totalcapital,
+                                        totalcost: totalcost
+                                    });
+
+                                    generateCoordinates();
+
+                                    w2ui.sidebar.click('results');
+                                    w2ui.sidebar.enable('saveoutputexcelfile');
+                                    w2ui.sidebar.enable('saveoutputepanetfile');
+                                    w2utils.on(document, 'click', event => console.log('Clicked on the screen:', event));
+                                    // document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
+                                });
+                            break;
+
+                        case 'optimize_1hour':
                             //clear any previous result tables
                             w2ui.resultnodegrid.clear();
                             w2ui.resultpipegrid.clear();
@@ -729,7 +864,8 @@
             generalform : {
                 name   : 'generalform',
                 focus : -1,
-                url : '/jaltantra_loop/optimizer',
+                // url : '/jaltantra_loop/optimizer',
+                url : '/jaltantra_loop_dev_v3/optimizer',
                 msgSaving  : 'Optimizing, Please Wait...',
                 fields : [
                     { field: 'name_project', type: 'text', required: true, html: { caption: 'Name of Project:', attr: 'style="width: 200px" title="Name of the project"', span: 9 } },
@@ -1309,7 +1445,7 @@
             $('#chart_status').change(elevationChartChanged);
 
             $('body').append('<iframe style="display:none" id="hiddenFrame" name="hiddenFrame"></iframe>');
-            $('body').append('<form action="/jaltantra_loop/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
+            $('body').append('<form action="/jaltantra_loop_dev_v3/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
             $('body').append('<input type="file" id="fileUpload" style="opacity:0; height:0px;width:0px;" />');
 
             reader = new FileReader();
@@ -4440,6 +4576,86 @@
             (new bootstrap.Modal(document.getElementById("myModalOptimizeTimer"), {})).show()
         }
 
+        function myDisplayTimer1min(){
+            // REFER: https://codepen.io/Seamni69/pen/gOvYKXv
+            // REFER: https://www.w3schools.com/bootstrap4/bootstrap_modal.asp
+            //        https://www.w3schools.com/bootstrap4/tryit.asp?filename=trybs_modal&stacked=h
+
+            document.querySelector(".myModalOptimizeTimer_classTimer").innerHTML = "Processing...";
+
+            // REFER: https://www.geeksforgeeks.org/javascript-check-the-existence-of-variable/
+            if (gWatchCountdown !== null) {
+                // Stopping previous timer & Starting a new one
+                clearInterval(gWatchCountdown);
+                gWatchCountdown = null
+            }
+
+            // Set the date we're counting down to
+            const countDownDate = new Date().getTime() + (1 * 60) * 1000+30000;
+
+            const countdown = () => {
+                const now = new Date().getTime();
+                const gap = countDownDate - now;
+
+                // How does the time work?
+                const second = 1000;
+                const minute = second * 60;
+                const hour = minute * 60;
+                const day = hour * 24;
+
+                // calculate
+                const textDay = Math.floor(gap / day);
+                const textHour = Math.floor((gap % day) / hour);
+                const textMinute = Math.floor((gap % hour) / minute);
+                const textSecond = Math.floor((gap % minute) / second);
+
+                let timerText = "";
+                let isPrefixIncluded = false;
+                if (isPrefixIncluded || textDay !== 0) {
+                    isPrefixIncluded = true;
+                    timerText += textDay + "d ";
+                }
+                if (isPrefixIncluded || textHour !== 0) {
+                    isPrefixIncluded = true;
+                    timerText += textHour + "h ";
+                }
+                if (isPrefixIncluded || textMinute !== 0) {
+                    isPrefixIncluded = true;
+                    timerText += textMinute + "m ";
+                }
+                if (isPrefixIncluded || textSecond !== 0) {
+                    timerText += textSecond + "s";
+                }
+                const regex = /^-?\d+d -?\d+h -?\d+m -?\d+s$/;
+                const match = timerText.match(regex);
+                if(match){
+                    document.querySelectorAll('.modal-dialog').forEach(element => element.classList.add('hidden'));
+                }
+                else {
+                    document.querySelector(".myModalOptimizeTimer_classTimer").innerHTML = "Optimizing, please wait for " + timerText + ", \n please do not close or reload this tab";
+                    document.querySelectorAll('body,.close').forEach(element => element.classList.add('unclickable'));
+                }
+                if (gap <= 0) {
+                    timerfinished=true
+                    clearInterval(gWatchCountdown);
+                    gWatchCountdown = null;
+                    w2ui.sidebar.click('optimize_1min');
+                    //document.querySelector(".myModalOptimizeTimer_classTimer").innerHTML = "Click <i>Optimize</i> again to get the results.";
+                    document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
+                    // REFER: https://stackoverflow.com/questions/195951/how-can-i-change-an-elements-class-with-javascript
+                    document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.remove('btn-outline-primary');
+                    document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.add('btn-primary');
+                    w2ui.sidebar.click('optimize_1min');
+                }
+            };
+
+            gWatchCountdown = setInterval(countdown, 1000);
+
+            // REFER: https://stackoverflow.com/questions/62827002/bootstrap-v5-manually-call-a-modal-mymodal-show-not-working-vanilla-javascrip
+            // REFER: https://getbootstrap.com/docs/3.4/javascript/
+            document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
+            (new bootstrap.Modal(document.getElementById("myModalOptimizeTimer"), {})).show()
+        }
         function myDisplayTimeronehour() {
             // REFER: https://codepen.io/Seamni69/pen/gOvYKXv
             // REFER: https://www.w3schools.com/bootstrap4/bootstrap_modal.asp
@@ -4503,13 +4719,13 @@
                     timerfinished=true
                     clearInterval(gWatchCountdown);
                     gWatchCountdown = null;
-                    w2ui.sidebar.click('optimize_again');
+                    w2ui.sidebar.click('optimize_1hour');
                     //document.querySelector(".myModalOptimizeTimer_classTimer").innerHTML = "Click <i>Optimize</i> again to get the results.";
                     document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
                     // REFER: https://stackoverflow.com/questions/195951/how-can-i-change-an-elements-class-with-javascript
                     document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.remove('btn-outline-primary');
                     document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.add('btn-primary');
-                    w2ui.sidebar.click('optimize_again');
+                    w2ui.sidebar.click('optimize_1hour');
 
                 }
             };
@@ -4523,7 +4739,7 @@
         }
 
 
-        console.log('Page successfully loaded, URL="/jaltantra_loop/optimizer"');
+        console.log('Page successfully loaded, URL="/jaltantra_loop_dev_v3/optimizer"');
     </script>
 
     <title>JalTantra</title>

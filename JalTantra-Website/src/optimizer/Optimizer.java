@@ -285,8 +285,8 @@ public class Optimizer {
 	public static int attempts=0;
 
 	// This should point to the root of the repository: Jaltantra-Code-and-Scripts
-	// static final String SOLVER_ROOT_DIR = "/home/deploy";
-	static final String SOLVER_ROOT_DIR = "/home/shantanu/Downloads/MTP/JalTantra-Code-and-Scripts";
+	static final String SOLVER_ROOT_DIR = "/home/deploy/dev_v3";
+	// static final String SOLVER_ROOT_DIR = "/home/shantanu/Downloads/MTP/JalTantra-Code-and-Scripts";
 	// This directory is for temporary use by the method `createNetworkFile()`
 	static final String SOLVER_1_NEW_FILE_DIR = "./DataNetworkGraphInput";
 	// If `createNetworkFile()` executes successfully, then the created network
@@ -321,6 +321,11 @@ public class Optimizer {
 		run_Time=runTime;
 		versionNumber = version;
 		project_Name = projectName;
+
+		if(runTime.equals("1min")){
+			SOLVER_EXECUTION_TIME="00:01:00";
+			SOLVER_EXECUTION_TIME_DISPLAY_STR="1 minutes";
+		}
 
 		if(runTime.equals("1hour")){
 			SOLVER_EXECUTION_TIME="01:00:00";
@@ -1575,16 +1580,27 @@ public class Optimizer {
 		out.write("bound1(nodes,j,pipes)$arcs(nodes,j).. l(nodes,j,pipes) =l= Len(nodes,j);\n");
 		out.write("cons1(nodes).. sum(arcs(j,nodes),q(arcs)) + sum(F_arcs(j,nodes),F_q(F_arcs)) =e= sum(arcs(nodes,j),q(arcs)) + sum(F_arcs(nodes,j),F_q(F_arcs))  + D(nodes);\n");
 		out.write("cons2(nodes).. h(nodes) =g= E(nodes) + P(nodes);\n");
-		out.write("cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,((q(arcs)*(abs(q(arcs))**0.852))*(0.001**1.852)*omega*l(arcs,pipes)/((R(pipes)**1.852)*(dia(pipes)/1000)**4.87)));\n");
-		out.write("cons6(F_arcs(nodes,j)).. h(nodes)-h(j)=e=(F_q(F_arcs)*(abs(F_q(F_arcs))**0.852))*(0.001**1.852)*(omega*F_L(F_arcs)/((F_R(F_arcs)**1.852)*(F_d(F_arcs)/1000)**4.87));\n");
+		out.write("cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,(signpower(q(arcs),1.852))*(0.001**1.852)*omega*l(arcs,pipes)/((R(pipes)**1.852)*(dis(pipes)/1000)**4.87));\n");
+		out.write("cons6(F_arcs(nodes,j)).. h(nodes)-h(j)=e=signpower(F_q(F_arcs),1.852)*(0.001**1.852)*omega*F_L(F_arcs)/((F_R(F_arcs)**1.852)*(F_d(F_arcs)/1000)**4.87);\n");
+		// out.write("cons6(F_arcs(nodes,j)).. h(nodes)-h(j)=e=(F_q(F_arcs)*(abs(F_q(F_arcs))**0.852))*(0.001**1.852)*(omega*F_L(F_arcs)/((F_R(F_arcs)**1.852)*(F_d(F_arcs)/1000)**4.87));\n");
 		out.write("cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);\n");
 		out.write("cons5(src)..  h(src)=e= sum(srcs,E(srcs));\n");
 
+
 		out.write("\n");
 
+
+		// out.write("model m1  /all/  ;\n");
+		// out.write("m1.optfile = 1;\n");
+		// out.write("$onecho > alphaecp.opt\n");
+		// out.write("nlpsolver ipopt\n");
+		// out.write("mipsolver cbc\n");
+		// out.write("$offecho\n");
+		// out.write("option minlp=alphaecp;\n");
+		// out.write("option nlp=ipopt;\n");
+		// out.write("solve m1 using nlp minimizing z ;\n");
+
 		out.write("model m1  /all/  ;\n");
-//			System.out.println("Option threads=4;");
-// 		out.write("m1.optfile =1;\n");
 		out.write("solve m1 using minlp minimizing z ;\n");
 
 	}

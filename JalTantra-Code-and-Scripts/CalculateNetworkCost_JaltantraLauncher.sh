@@ -16,8 +16,9 @@ FILE_PATH=$(dirname "$0")
 cd "${FILE_PATH}"
 
 LOG_FILE='log_jaltantra_CalculateNetworkCost_JaltantraLauncher.log'
-#MINICONDA_HOME='/home/fenil/miniconda3'
-MINICONDA_HOME='/home/shantanu/miniconda3'
+
+#MINICONDA_HOME='/home/shantanu/miniconda3'
+MINICONDA_HOME='/home/fenil/miniconda3'
 
 echo >> "${LOG_FILE}"
 echo "date    = '$(date)'" >> "${LOG_FILE}"

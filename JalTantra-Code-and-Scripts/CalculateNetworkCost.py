@@ -426,7 +426,7 @@ class SolverOutputAnalyzerBaron(SolverOutputAnalyzerParent):
             best_solution = re.search(r'^total_cost\s*=\s*(.*)$', file_txt, re.M).group(1)
             best_solution = float(best_solution)
             ok = True
-            if best_solution > 1e40:
+            if best_solution > 1e40 or best_solution == 0:
                 g_logger.warning(f"Probably an infeasible solution found by Baron: '{best_solution}'")
                 g_logger.info(f'Instance={exec_info}')
                 ok = False
@@ -718,13 +718,30 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             fq_variable_end = 0
             l_variable_start = 0
             l_variable_end = 0
+
+            q_variable_present = False
             fq_variable_present = False
 
             for i in range(len(arr)):
                 if fq_variable in arr[i]:
                     fq_variable_present = True
+                if q_variable in arr[i]:
+                    q_variable_present = True
 
-            if fq_variable_present:
+            if not q_variable_present:
+                for i in range(len(arr)):
+
+                    if fq_variable in arr[i]:
+                        fq_variable_start = i + 4
+
+                    if h_variable in arr[i]:
+                        fq_variable_end = i - 4
+                        h_variable_start = i + 4
+
+                    if "**** REPORT SUMMARY" in arr[i]:
+                        h_variable_end = i - 1
+
+            elif fq_variable_present:
                 for i in range(len(arr)):
 
                     if fq_variable in arr[i]:
@@ -774,20 +791,24 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             output_file_txt.write(';\n\n')
 
             # printing flow values
-            output_file_txt.write("q[i,j] :=\n")
-            min_length = 6
-            for i in range(q_variable_start, q_variable_end - 1):
-                line = arr[i].strip().split()
-                length = len(line)
-                min_length = min(min_length, length)
-            for i in range(q_variable_start, q_variable_end - 1):
-                line = arr[i].strip().split()
-                srcToDest = ''
-                for j in range(0, len(line) - min_length + 1):
-                    srcToDest += line[j]
-                srcToDest = srcToDest.split('.')
-                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t{line[(len(line)) - 3]}\n')
-            output_file_txt.write(';\n\n')
+            if q_variable_present:
+                output_file_txt.write("q[i,j] :=\n")
+                min_length = 6
+                for i in range(q_variable_start, q_variable_end - 1):
+                    line = arr[i].strip().split()
+                    length = len(line)
+                    min_length = min(min_length, length)
+                for i in range(q_variable_start, q_variable_end - 1):
+                    line = arr[i].strip().split()
+                    srcToDest = ''
+                    for j in range(0, len(line) - min_length + 1):
+                        srcToDest += line[j]
+                    srcToDest = srcToDest.split('.')
+                    output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t{line[(len(line)) - 3]}\n')
+                output_file_txt.write(';\n\n')
+
+            else:
+                output_file_txt.write('q[i,j]; #empty\n\n')
 
             # printing fixed flow values
             if fq_variable_present:
@@ -807,21 +828,25 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
                 output_file_txt.write(';\n\n')
 
             else:
-                output_file_txt.write("F_q[i,j] :=#empty\n")
+                output_file_txt.write("F_q[i,j] :=#empty;\n\n")
 
             # printing length values
-            output_file_txt.write("l[i,j,k] :=\n")
-            min_length = 7
-            # print(l_variable_start,l_variable_end)
+            if q_variable_present:
+                output_file_txt.write("l[i,j,k] :=\n")
+                min_length = 7
+                # print(l_variable_start,l_variable_end)
 
-            for i in range(l_variable_start, l_variable_end):
-                links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
-                line = arr[i].strip().split()
-                if line[len(line) - 3] == '.':
-                    continue
-                length_value = float(line[len(line) - 3])
-                output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
-            output_file_txt.write(';\n\n')
+                for i in range(l_variable_start, l_variable_end):
+                    links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
+                    line = arr[i].strip().split()
+                    if line[len(line) - 3] == '.' or line[len(line) - 3] == 'EPS':
+                        continue
+                    length_value = float(line[len(line) - 3])
+                    output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
+                output_file_txt.write(';\n\n')
+
+            else:
+                output_file_txt.write('l[i,j,k]; #empty\n\n')
 
             output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
 
@@ -886,12 +911,32 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         l_variable_start = 0
         l_variable_end = 0
 
+        q1_variable_present = False
         fq1_variable_present = False
+
         for i in range(len(arr)):
             if fq1_variable in arr[i]:
                 fq1_variable_present = True
+            if q1_variable in arr[i]:
+                q1_variable_present = True
 
-        if fq1_variable_present:
+        if not q1_variable_present:
+            for i in range(len(arr)):
+                if fq1_variable in arr[i]:
+                    fq1_variable_start = i + 4
+
+                if fq2_variable in arr[i]:
+                    fq2_variable_start = i + 4
+                    fq1_variable_end = i - 1
+
+                if h_variable in arr[i]:
+                    fq2_variable_end = i - 4
+                    h_variable_start = i + 4
+
+                if "**** REPORT SUMMARY" in arr[i]:
+                    h_variable_end = i - 1
+
+        elif fq1_variable_present:
             for i in range(len(arr)):
 
                 if fq1_variable in arr[i]:
@@ -941,8 +986,8 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
                     q1_variable_start = i + 4
                     l_variable_end = i - 1
 
-        print(q1_variable_start, q1_variable_end)
-        print(q2_variable_start, q2_variable_end)
+        # print(q1_variable_start, q1_variable_end)
+        # print(q2_variable_start, q2_variable_end)
 
         total_execution_time = re.search(r'EXECUTION TIME\s+=\s+(\d+\.\d+) SECONDS', gams_file_text, re.M).group(1)
         output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
@@ -956,41 +1001,45 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         output_file_txt.write(';\n\n')
 
         # *************************printing flow values***************************
-        output_file_txt.write(":         q1[i,j]       q2[i,j]      :=\n")
-        flow_dict = {}
-        min_length = 6
-        for i in range(q1_variable_start, q1_variable_end):
-            line = arr[i].strip().split()
-            length = len(line)
-            min_length = min(min_length, length)
+        if q1_variable_present:
+            output_file_txt.write(":         q1[i,j]       q2[i,j]      :=\n")
+            flow_dict = {}
+            min_length = 6
+            for i in range(q1_variable_start, q1_variable_end):
+                line = arr[i].strip().split()
+                length = len(line)
+                min_length = min(min_length, length)
 
-        # print(min_length)
+            # print(min_length)
 
-        for i in range(q1_variable_start, q1_variable_end):
-            line = arr[i].strip().split()
-            srcToDest = ''
-            for j in range(0, len(line) - min_length + 1):
-                srcToDest += line[j]
-            # print(srcToDest)
-            if line[(len(line)) - 3] != '.':
-                flow_dict[srcToDest] = line[(len(line)) - 3]
+            for i in range(q1_variable_start, q1_variable_end):
+                line = arr[i].strip().split()
+                srcToDest = ''
+                for j in range(0, len(line) - min_length + 1):
+                    srcToDest += line[j]
+                # print(srcToDest)
+                if line[(len(line)) - 3] != '.':
+                    flow_dict[srcToDest] = line[(len(line)) - 3]
 
-        # print(flow_dict)
+            # print(flow_dict)
 
-        for i in range(q2_variable_start, q2_variable_end - 1):
-            line = arr[i].strip().split()
-            srcToDest = ''
-            for j in range(0, len(line) - min_length + 1):
-                srcToDest += line[j]
-            if srcToDest not in flow_dict.keys():
-                srcToDest = srcToDest.split('.')
-                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t0\t\t{line[(len(line)) - 3]}\n')
-            else:
-                flow_value = flow_dict[srcToDest]
-                srcToDest = srcToDest.split('.')
-                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t{flow_value}\t\t0\n')
+            for i in range(q2_variable_start, q2_variable_end - 1):
+                line = arr[i].strip().split()
+                srcToDest = ''
+                for j in range(0, len(line) - min_length + 1):
+                    srcToDest += line[j]
+                if srcToDest not in flow_dict.keys():
+                    srcToDest = srcToDest.split('.')
+                    output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t0\t\t{line[(len(line)) - 3]}\n')
+                else:
+                    flow_value = flow_dict[srcToDest]
+                    srcToDest = srcToDest.split('.')
+                    output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t{flow_value}\t\t0\n')
 
-        output_file_txt.write(';\n\n')
+            output_file_txt.write(';\n\n')
+
+        else:
+            output_file_txt.write(': q1[i,j] q2[i,j]    :=\n;\n\n')
 
         # *********************printing fixed flow values*****************************
         if fq1_variable_present:
@@ -1030,21 +1079,26 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
                     output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t{flow_value}\t\t0\n')
 
             output_file_txt.write(';\n\n')
+        else:
+            output_file_txt.write(": F_q1[i,j] F_q2[i,j]    :=\n;\n\n")
         # ************************************************************************************************************************
 
         # printing length values
-        output_file_txt.write("l[i,j,k] :=\n")
-        min_length = 7
-        # print(l_variable_start,l_variable_end)
+        if q1_variable_present:
+            output_file_txt.write("l[i,j,k] :=\n")
+            min_length = 7
+            # print(l_variable_start,l_variable_end)
 
-        for i in range(l_variable_start, l_variable_end):
-            links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
-            line = arr[i].strip().split()
-            if line[len(line) - 3] == '.':
-                continue
-            length_value = float(line[len(line) - 3])
-            output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
-        output_file_txt.write(';\n\n')
+            for i in range(l_variable_start, l_variable_end):
+                links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
+                line = arr[i].strip().split()
+                if line[len(line) - 3] == '.' or line[len(line) - 3] == 'EPS':
+                    continue
+                length_value = float(line[len(line) - 3])
+                output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
+            output_file_txt.write(';\n\n')
+        else:
+            output_file_txt.write('l[i,j,k]; #empty\n\n')
 
         output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
 
@@ -1141,7 +1195,7 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             best_solution_string = str(best_solution)
             best_solution = float(best_solution)
             ok = True
-            if best_solution == 0 or best_solution > 1e40 or len(best_solution_string) == 0:
+            if best_solution > 1e40 or len(best_solution_string) == 0:
                 g_logger.warning(f"Probably an infeasible solution found by alphaecp: '{best_solution}'")
                 g_logger.info(f'Instance={exec_info}')
                 ok = False
@@ -1424,7 +1478,8 @@ class AutoExecutorSettings:
     # Please ensure that proper escaping of white spaces and other special characters
     # is done because this will be executed in a fashion similar to `./a.out`
     AMPL_PATH = './ampl.linux-intel64/ampl'
-    GAMS_PATH = '/opt/gams/gams43.2_linux_x64_64_sfx/gams'
+    # GAMS_PATH = '/opt/gams/gams43.2_linux_x64_64_sfx/gams'
+    GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
     AVAILABLE_SOLVERS = ['alphaecp', 'baron',
                          'knitro']  # NOTE: Also look at `__update_solver_dict()` method when updating this
     AVAILABLE_MODELS = {1: 'm1_basic.R', 2: 'm2_basic2_v2.R', 3: 'm3_descrete_segment.R', 4: 'm4_parallel_links.R'}
@@ -1459,7 +1514,7 @@ class AutoExecutorSettings:
     def __update_solver_dict(self):
         # NOTE: Update `AutoExecutorSettings.AVAILABLE_SOLVERS` if keys in below dictionary are updated
         # NOTE: Use double quotes ONLY in the below variables
-        timeoption = self.r_execution_time_limit - 30
+        timeoption = self.r_execution_time_limit - 15
 
         fileHash = self.data_file_hash
 
@@ -1478,7 +1533,7 @@ class AutoExecutorSettings:
             ),
             'knitro': SolverOutputAnalyzerKnitro(
                 engine_path='./ampl.linux-intel64/knitro',
-                engine_options=f'option knitro_options "threads={self.r_cpu_cores_per_solver}'
+                engine_options=f'option knitro_options "threads=4'
                                f' feastol = 1.0e-7 feastol_abs = 1.0e-7 ms_enable = 1 ms_maxsolves = 100000 '
                                f'ms_maxtime_real = {timeoption}";',
                 threads=self.r_cpu_cores_per_solver
