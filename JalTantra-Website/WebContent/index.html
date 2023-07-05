@@ -552,14 +552,13 @@
                                 });
                             break;
 
-                        case optimize_1min:
+                        case 'optimize_1min':
+                            //clear any previous result tables
                             w2ui.resultnodegrid.clear();
                             w2ui.resultpipegrid.clear();
                             w2ui.resultcostgrid.clear();
                             w2ui.resultesrcostgrid.clear();
                             w2ui.resultpumpgrid.clear();
-
-                            // document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
                             //validate input data
                             if(!validateData())
                                 return;
@@ -583,6 +582,7 @@
                             var valveString = JSON.stringify(w2ui.valvegrid.records,replacer);
 
                             var RunTime='1min';
+
                             //send server request with JSON objects
                             w2ui.generalform.save({'general': generalString,
                                     'nodes': nodesString,
@@ -598,18 +598,18 @@
                                     'time':RunTime},
                                 function(data)
                                 {
-                                    //populate result tables with server response
                                     document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
+                                    //populate result tables with server response
                                     if (data.hasOwnProperty('message')) {
                                         if (!data['message'].startsWith('The solver is working, refresh the page')) {
                                             document.querySelectorAll('.modal-dialog').forEach(element => element.classList.add('hidden'));
                                             w2alert(data['message']);
                                             return;
                                         }
-                                        // document.querySelectorAll('.modal-dialog').forEach(element => element.classList.remove('hidden'));
-                                        myDisplayTimer1min();
+                                        myDisplayTimeronemin();
                                         return;
                                     }
+
                                     document.querySelectorAll('.modal-dialog').forEach(element => element.classList.add('hidden'));
                                     w2alert(data['data']);
                                     var resultnodes = data['resultnodes'];
@@ -681,8 +681,10 @@
                                     w2ui.sidebar.click('results');
                                     w2ui.sidebar.enable('saveoutputexcelfile');
                                     w2ui.sidebar.enable('saveoutputepanetfile');
+
                                     w2utils.on(document, 'click', event => console.log('Clicked on the screen:', event));
                                     // document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
+
                                 });
                             break;
 
@@ -864,8 +866,7 @@
             generalform : {
                 name   : 'generalform',
                 focus : -1,
-                // url : '/jaltantra_loop/optimizer',
-                url : '/jaltantra_loop_dev_v3/optimizer',
+                url : '/jaltantra_loop/optimizer',
                 msgSaving  : 'Optimizing, Please Wait...',
                 fields : [
                     { field: 'name_project', type: 'text', required: true, html: { caption: 'Name of Project:', attr: 'style="width: 200px" title="Name of the project"', span: 9 } },
@@ -874,7 +875,7 @@
                     { field: 'def_pipe_roughness',   type: 'float', options: {min: '0'}, required: true, html: { caption: 'Default Pipe Roughness:', attr: 'style="width: 200px" title="Default Hazen-Williams roughness coefficient used to calculate headloss in pipes"', span: 9 } },
                     { field: 'min_hl_perkm',  type: 'float', options: {min: '0'}, required: true, html: { caption: 'Minimum Headloss/KM (m):', attr: 'style="width: 200px" title="Minimum headloss in metres that is allowed per kilometre in a pipe"', span: 9 } },
                     { field: 'max_hl_perkm',  type: 'float', options: {min: '0'}, required: true, html: { caption: 'Maximum Headloss/KM (m):', attr: 'style="width: 200px" title="Maximum headloss in metres that is allowed per kilometre in a pipe"', span: 9 } },
-                    { field: 'max_water_speed',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Maximum Water Speed (m/s):', attr: 'style="width: 200px" title="Maximum speed of water in metres per second that is allowed in a pipe (can be left blank if no upper limit on speed is to be enforced)"', span: 9 } },
+                    // { field: 'max_water_speed',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Maximum Water Speed (m/s):', attr: 'style="width: 200px" title="Maximum speed of water in metres per second that is allowed in a pipe (can be left blank if no upper limit on speed is to be enforced)"', span: 9 } },
                     { field: 'max_pipe_pressure',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Maximum Pipe Pressure (m):', attr: 'style="width: 200px" title="Maximum pressure of water in metres that should exist in a pipe (can be left blank if no upper limit on pressure). Note that this constraint is not strictly enforced, but a warning is provided in the results if pressure is exceeded"', span: 9 } },
                     { field: 'supply_hours',  type: 'float', options: {min: '0'}, required: true, html: { caption: 'Number of Supply Hours:', attr: 'style="width: 200px"  title="Number of hours in day that the source provides water. For example a supply hours of 12 is equivalent to a peak factor of 2"', span: 9 } },
                     { field: 'source_nodeid',  type: 'int', options: {min: '1'}, required: true, html: { caption: 'Source Node ID:', attr: 'style="width: 200px" title="Unique integer identifier for the source. Must be >= 1"', span: 9 } },
@@ -882,8 +883,8 @@
                     { field: 'source_head',  type: 'float', options: {min: '0'}, required: true, html: { caption: 'Source Head (m):', attr: 'style="width: 200px" title="Constant head in metres provided by the source to the network"', span: 9 } },
                     { field: 'source_elevation',  type: 'float', options: {min: '0'}, required: true, html: { caption: 'Source Elevation (m):', attr: 'style="width: 200px" title="Elevation of the source node"', span: 9 } },
                     //{ field: 'source_demand',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Source Supply (lps):', attr: 'style="width: 200px" title="Amount of water being supplied by source in case of cyclic network"', span: 9 } },
-                    { field: 'min_flow',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Least flow through pipes (lps): ', attr: 'style="width: 200px" title="Minimum flow necessary through the pipes for cyclic networks"', span: 9 } },
-                    { field: 'max_flow',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Highest flow through pipes (lps):', attr: 'style="width: 200px" title="Maximum flow necessary through the pipes for cyclic networks"', span: 9 } }
+                    // { field: 'min_flow',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Least flow through pipes (lps): ', attr: 'style="width: 200px" title="Minimum flow necessary through the pipes for cyclic networks"', span: 9 } },
+                    // { field: 'max_flow',  type: 'float', options: {min: '0'}, required: false, html: { caption: 'Highest flow through pipes (lps):', attr: 'style="width: 200px" title="Maximum flow necessary through the pipes for cyclic networks"', span: 9 } }
                 ],
                 toolbar: {
                     //buttons to initalize default values for form or clear the form
@@ -1445,7 +1446,7 @@
             $('#chart_status').change(elevationChartChanged);
 
             $('body').append('<iframe style="display:none" id="hiddenFrame" name="hiddenFrame"></iframe>');
-            $('body').append('<form action="/jaltantra_loop_dev_v3/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
+            $('body').append('<form action="/jaltantra_loop/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
             $('body').append('<input type="file" id="fileUpload" style="opacity:0; height:0px;width:0px;" />');
 
             reader = new FileReader();
@@ -4576,7 +4577,7 @@
             (new bootstrap.Modal(document.getElementById("myModalOptimizeTimer"), {})).show()
         }
 
-        function myDisplayTimer1min(){
+        function myDisplayTimeronemin() {
             // REFER: https://codepen.io/Seamni69/pen/gOvYKXv
             // REFER: https://www.w3schools.com/bootstrap4/bootstrap_modal.asp
             //        https://www.w3schools.com/bootstrap4/tryit.asp?filename=trybs_modal&stacked=h
@@ -4646,16 +4647,18 @@
                     document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.remove('btn-outline-primary');
                     document.getElementById("myModalOptimizeTimer_idTimerDismiss").classList.add('btn-primary');
                     w2ui.sidebar.click('optimize_1min');
+
                 }
             };
 
             gWatchCountdown = setInterval(countdown, 1000);
 
+            document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
             // REFER: https://stackoverflow.com/questions/62827002/bootstrap-v5-manually-call-a-modal-mymodal-show-not-working-vanilla-javascrip
             // REFER: https://getbootstrap.com/docs/3.4/javascript/
-            document.querySelectorAll('body,.close').forEach(element => element.classList.remove('unclickable'));
             (new bootstrap.Modal(document.getElementById("myModalOptimizeTimer"), {})).show()
         }
+
         function myDisplayTimeronehour() {
             // REFER: https://codepen.io/Seamni69/pen/gOvYKXv
             // REFER: https://www.w3schools.com/bootstrap4/bootstrap_modal.asp
@@ -4739,7 +4742,9 @@
         }
 
 
-        console.log('Page successfully loaded, URL="/jaltantra_loop_dev_v3/optimizer"');
+
+
+        console.log('Page successfully loaded, URL="/jaltantra_loop/optimizer"');
     </script>
 
     <title>JalTantra</title>
