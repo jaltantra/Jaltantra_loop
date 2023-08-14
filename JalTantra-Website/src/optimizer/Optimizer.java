@@ -285,7 +285,7 @@ public class Optimizer {
 	public static int attempts=0;
 
 	// This should point to the root of the repository: Jaltantra-Code-and-Scripts
-	static final String SOLVER_ROOT_DIR = "/home/sid/Jaltantra_loop/JalTantra-Code-and-Scripts";
+	static final String SOLVER_ROOT_DIR = "/home/shantanu/Music/Jaltantra_loop/JalTantra-Code-and-Scripts";
 	// static final String SOLVER_ROOT_DIR = "/home/sid/Jaltantra_loop/JalTantra-Code-and-Scripts";
 	// This directory is for temporary use by the method `createNetworkFile()`
 	static final String SOLVER_1_NEW_FILE_DIR = "./DataNetworkGraphInput";

@@ -1478,8 +1478,9 @@ class AutoExecutorSettings:
     # Please ensure that proper escaping of white spaces and other special characters
     # is done because this will be executed in a fashion similar to `./a.out`
     AMPL_PATH = './ampl.linux-intel64/ampl'
-    # GAMS_PATH = '/opt/gams/gams43.2_linux_x64_64_sfx/gams'
-    GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
+    GAMS_PATH = '/opt/gams/gams43.2_linux_x64_64_sfx/gams'
+    #GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
+
     AVAILABLE_SOLVERS = ['alphaecp', 'baron',
                          'knitro']  # NOTE: Also look at `__update_solver_dict()` method when updating this
     AVAILABLE_MODELS = {1: 'm1_basic.R', 2: 'm2_basic2_v2.R', 3: 'm3_descrete_segment.R', 4: 'm4_parallel_links.R'}

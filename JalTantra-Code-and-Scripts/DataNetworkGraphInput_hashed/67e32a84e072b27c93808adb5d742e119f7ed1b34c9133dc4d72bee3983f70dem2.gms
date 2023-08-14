@@ -39,16 +39,24 @@ Variable q2(nodes,j);
 q2.lo(nodes,j)=qm;
 q2.up(nodes,j)=q_M;
 
+Variable F_q1(nodes,j);
+F_q1.lo(nodes,j)=qm;
+F_q1.lo(nodes,j)=qm;
+
+Variable F_q2(nodes,j);
+F_q2.lo(nodes,j)=qm;
+F_q2.up(nodes,j)=q_M;
 Variables z;
 
 Variable h(nodes);
 
-Equations cost "objective function",bound1(nodes,j,pipes),cons1(nodes),cons2(nodes),cons3(nodes,j),cons5(src), cons4(nodes,j), cons6(nodes,j) ;
+Equations cost "objective function",bound1(nodes,j,pipes),cons1(nodes),cons2(nodes),cons3(nodes,j),cons5(src), cons4(nodes,j), cons6(nodes,j), cons7(nodes,j) ;
 cost..  z=e=sum(arcs(nodes,j),sum(pipes,l(arcs,pipes)*c(pipes)));
 bound1(nodes,j,pipes)$arcs(nodes,j).. l(nodes,j,pipes) =l= Len(nodes,j);
-cons1(nodes).. sum(arcs(j,nodes),(q1(arcs)-q2(arcs))) =e= sum(arcs(nodes,j),(q1(arcs)-q2(arcs))) + D(nodes);
+cons1(nodes).. sum(arcs(j,nodes),(q1(arcs)-q2(arcs))) + sum(F_arcs(j,nodes),(F_q1(F_arcs)-F_q2(F_arcs))) =e= sum(arcs(nodes,j),(q1(arcs)-q2(arcs))) + sum(F_arcs(nodes,j),(F_q1(F_arcs)-F_q2(F_arcs))) + D(nodes);
 cons2(nodes).. h(nodes) =g= E(nodes) + P(nodes);
 cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,(((q1(arcs)*0.001)**1.852 - (q2(arcs)*0.001)**1.852)*omega*l(arcs,pipes))/((R(pipes)**1.852)*(dia(pipes)/1000)**4.87));
+cons7(F_arcs(nodes,j)).. h(nodes)-h(j)=e=(((F_q1(F_arcs)*0.001)**1.852 - (F_q2(F_arcs)*0.001)**1.852)*omega*F_L(F_arcs))/((F_R(F_arcs)**1.852)*(F_d(F_arcs)/1000)**4.87);
 cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
 cons5(src)..  h(src)=e= sum(srcs,E(srcs));
 cons6(arcs(nodes,j)).. q1(arcs)*q2(arcs) =l= q_M*qm;
