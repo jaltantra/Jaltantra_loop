@@ -866,7 +866,7 @@
             generalform : {
                 name   : 'generalform',
                 focus : -1,
-                url : '/jaltantra_loop/optimizer',
+                url : '/jaltantra_loop_dev_v4/optimizer',
                 msgSaving  : 'Optimizing, Please Wait...',
                 fields : [
                     { field: 'name_project', type: 'text', required: true, html: { caption: 'Name of Project:', attr: 'style="width: 200px" title="Name of the project"', span: 9 } },
@@ -1446,7 +1446,7 @@
             $('#chart_status').change(elevationChartChanged);
 
             $('body').append('<iframe style="display:none" id="hiddenFrame" name="hiddenFrame"></iframe>');
-            $('body').append('<form action="/jaltantra_loop/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
+            $('body').append('<form action="/jaltantra_loop_dev_v4/optimizer" method="post" target="hiddenFrame" id="postToIframeForm"></form>');
             $('body').append('<input type="file" id="fileUpload" style="opacity:0; height:0px;width:0px;" />');
 
             reader = new FileReader();
@@ -4744,7 +4744,7 @@
 
 
 
-        console.log('Page successfully loaded, URL="/jaltantra_loop/optimizer"');
+        console.log('Page successfully loaded, URL="/jaltantra_loop_dev_v4/optimizer"');
     </script>
 
     <title>JalTantra</title>
